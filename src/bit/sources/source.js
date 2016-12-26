@@ -2,9 +2,9 @@
 import Bit from '../../bit';
 
 export default class Source {
-  src: string;
+  src: any;
 
-  constructor(src: string) {
+  constructor(src: any) {
     this.src = src;
   }
   

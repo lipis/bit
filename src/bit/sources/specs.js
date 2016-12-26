@@ -1,6 +1,7 @@
 /** @flow */
 import * as fs from 'fs';
 import * as path from 'path';
+import R from 'ramda';
 import Source from './source';
 import createSpecs from '../templates/specs.template';
 import BitJson from '../../bit-json';
@@ -16,6 +17,7 @@ export default class Specs extends Source {
   
   write(bitPath: string): Promise<any> {
     return new Promise((resolve, reject) => {
+      if (R.is(String, this.src)) this.src = Promise.resolve(this.src);
       this.src // @TODO - how do we get the default template
       .then((template) => {
         fs.writeFile(composePath(bitPath), template, (err, res) => {
