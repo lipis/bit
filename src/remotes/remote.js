@@ -52,6 +52,10 @@ export default class Remote {
     return network.push(bit);
   }
 
+  list() {
+    return this.connect().exec('_list');
+  }
+
   static load(alias: string, host: string): Remote {
     const primary = isPrimary(alias);
     if (primary) alias = cleanBang(alias);
