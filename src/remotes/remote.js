@@ -5,6 +5,7 @@ import { connect } from '../network';
 import { InvalidRemote } from './exceptions';
 import { BitId } from '../bit-id';
 import { Scope } from '../scope';
+import { SSH } from '../network/ssh';
 
 /**
  * @ctx bit, primary, remote
@@ -24,7 +25,7 @@ export default class Remote {
     this.primary = primary;
   }
 
-  connect(): Remote {
+  connect(): SSH {
     return connect(this.host);
   }
 

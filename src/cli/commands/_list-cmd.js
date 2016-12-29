@@ -2,6 +2,7 @@
 import Command from '../command';
 import { fromBase64 } from '../../utils';
 import { list } from '../../api';
+import PartialBit from '../../bit/partial-bit';
 
 export default class Upload extends Command {
   name = '_list <path>';

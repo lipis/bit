@@ -8,22 +8,20 @@ import BitJson from '../../bit-json';
 
 const projectPath = process.cwd();
 
-function loadBit(sourcePath: String, id: BitId): Promise<Bit> {
+function loadBit(sourcePath: string, id: BitId): Promise<PartialBit> {
   const bitDir = path.join(sourcePath, id.box, id.name, id.version.toString());
-
-  return PartialBit.load(bitDir, id.name)
-    .then(partial => partial);
+  return PartialBit.load(bitDir, id.name);
 }
 
 /**
- * list the bits in the bits directory
+ * list the bits in the source directory
  **/
-function listCurrentScope(sourcePath): Promise<Bit[]> {
+function listCurrentScope(sourcePath: string): Promise<PartialBit[]> {
   return new Promise((resolve, reject) =>
     glob(path.join('*', '*', '*'), { cwd: sourcePath }, (err, files) => {
       if (err) reject(err);
       const bitsP = files.map((bitRawId) => {
-        return loadBit(sourcePath, BitId.parse(`@this/${path.dirname(bitRawId)}`, 1));
+        return loadBit(sourcePath, BitId.parse(`@this/${path.dirname(bitRawId)}`, path.basename(bitRawId)));
       });
 
       return Promise.all(bitsP)
@@ -39,12 +37,13 @@ function listRemoteScope(rawRemote: string) {
   });
 }
 
-exports.list = function (scope): Promise<string[]> {
+exports.listScope = function (scope: string): Promise<PartialBit[]> {
+  if (scope) return listRemoteScope(scope);
   const sourcePath = path.join(projectPath, BIT_HIDDEN_DIR, BIT_SOURCES_DIRNAME);
-  return scope ? listRemoteScope(scope) : listCurrentScope(sourcePath);
+  return listCurrentScope(sourcePath);
 };
 
-exports.remoteList = function (sourcePath): Promise<string[]> {
+exports.remoteList = function (sourcePath: string): Promise<PartialBit[]> {
   sourcePath = path.join(sourcePath, BIT_SOURCES_DIRNAME);
   return listCurrentScope(sourcePath);
 };
