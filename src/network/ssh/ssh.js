@@ -1,8 +1,12 @@
 /** @flow */
 import keyGetter from './key-getter';
 import Bit from '../../bit';
+import { RemoteScopeNotFound } from '../exceptions';
+import { BitId, BitIds } from '../../bit-id';
 import { toBase64, fromBase64 } from '../../utils';
+import { BitDependencies } from '../../scope';
 import type { SSHUrl } from '../../utils/parse-ssh-url';
+import type { ScopeDescriptor } from '../../scope/scope';
 
 const sequest = require('sequest');
 
@@ -43,26 +47,21 @@ export default class SSH {
         .join(' ');
     }
 
-    // let path = '';
-    // if (this.path) path = `cd ${this.path}; `;
-    const cmd = `bit ${commandName} ${serialize()}`;
-
-    return cmd; 
+    return `bit ${commandName} ${serialize()}`;
   }
 
   exec(commandName: string, ...args: any[]): Promise<any> {
     return new Promise((resolve, reject) => {
-      const cmd = this.buildCmd(commandName, absolutePath(this.path), ...args);
+      const cmd = this.buildCmd(commandName, absolutePath(this.path || ''), ...args);
       this.connection(cmd, function (err, res, o) {
-        if (err) return reject(err);
+        if (err && o.code && o.code !== 0) return reject(err);
         return resolve(clean(res));
       });
     });
   }
 
   putBit(name: string, bitTar: Buffer) {
-    return this.exec('_upload', name, bitTar)
-      .then(status => console.log(status));
+    return this.exec('_put', name, bitTar.tarball);
   }
 
   push(bit: Bit) {
@@ -75,26 +74,24 @@ export default class SSH {
     return this.exec('_search', query);
   }
 
-  describeScope() {
+  describeScope(): Promise<ScopeDescriptor> {
     return this.exec('_scope')
       .then((data) => {
         return JSON.parse(fromBase64(data));
+      })
+      .catch(() => {
+        throw new RemoteScopeNotFound();
       });
   }
 
-  fetch(bitIds: BitId[]): Promise<{name: string, contents: Buffer}[]> {
-    bitIds = bitIds.map(bitIds.map(bitId => bitId.toString()));
+  fetch(bitIds: BitIds): Promise<BitDependencies[]> {
+    bitIds = bitIds.map(bitId => bitId.toString());
     return this.exec('_fetch', ...bitIds)
       .then((packs) => {
-        return packs
+        const [objects, scope] = packs.split(' ');
+        return objects
           .split('!!!')
-          .map((pack) => {
-            const [name, contents] = pack.split('::');
-            return {
-              name: fromBase64(name),
-              contents: new Buffer(contents, 'base64')
-            };
-          });
+          .map(pack => BitDependencies.deserialize(pack, scope));
       });
   }
 
@@ -107,7 +104,7 @@ export default class SSH {
     return `${this.username}@${this.host}:${this.port}`;
   }
  
-  connect(sshUrl: SSHUrl, key: ?string): SSH {
+  connect(sshUrl: SSHUrl, key: ?string): Promise<SSH> {
     this.connection = sequest.connect(this.composeConnectionUrl(), {
       privateKey: keyGetter(key)
     });

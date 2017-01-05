@@ -1,6 +1,10 @@
 /** @flow */
-import { loadScope, Scope } from '../../scope';
+import { loadScope, Scope, BitDependencies } from '../../scope';
 import { BitIds } from '../../bit-id';
+import Bit from '../../bit';
+import { FsScopeNotLoaded } from '../exceptions';
+import { flatten } from '../../utils';
+import type { ScopeDescriptor } from '../../scope/scope';
 
 export default class Fs {
   scopePath: string;
@@ -11,24 +15,33 @@ export default class Fs {
   }
 
   close() {
-    this.scope = null;
     return this;
   }
 
-  describeScope() {
-    return this.scope.describe();
+  getScope(): Scope {
+    if (!this.scope) throw new FsScopeNotLoaded();
+    return this.scope;
+  }
+
+  describeScope(): Promise<ScopeDescriptor> {
+    return Promise.resolve(this.getScope().describe());
   }
 
   push(bit: Bit) {
-    return this.scope.put(bit);
+    return this.getScope().put(bit);
+  }
+
+  fetch(bitIds: BitIds): Promise<BitDependencies[]> {
+    return this.getScope().getMany(bitIds)
+      .then(bitsMatrix => flatten(bitsMatrix));
   }
 
   search(query: string) {
-    return this.scope.search(query);
+    return this.getScope().search(query);
   }
 
-  fetch(bitIds: BitIds) {
-    return this.scope.getMany(bitIds);
+  fetchOnes(bitIds: BitIds): Promise<Bit[]> {
+    return this.getScope().manyOnes(bitIds);
   }
 
   connect() {

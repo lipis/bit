@@ -33,7 +33,7 @@ export const BIT_USAGE = '[--version] [--help] <command> [<args>]';
 
 export const BITS_DIRNAME = 'bits';
 
-export const ENV_BITS_DIRNAME = 'env_bits';
+export const BIT_ENVIRONMENT_DIRNAME = 'environment';
 
 export const INLINE_BITS_DIRNAME = 'inline_bits';
 
@@ -73,7 +73,6 @@ export const DEFAULT_REMOTES = {};
 
 export const DEFAULT_DEPENDENCIES = {};
 
-
 /**
  * cache root directory
  */
@@ -98,6 +97,12 @@ export const APP_CACHE_DIR = path.join(CACHE_ROOT, 'app');
  * glboal config directorye
  */
 export const GLOBAL_CONFIG = path.join(CACHE_ROOT, 'config');
+
+export const SOURCES_JSON = 'sources.json';
+
+export const EXTERNAL_MAP = 'externals.json';
+
+export const SOURCES_MAP = 'sources.json';
 
 export const GLOBAL_REMOTES = 'global-remotes.json';
 
@@ -145,3 +150,7 @@ export const DEFAULT_RESOLVER = () => '';
  * current bit application version
  */
 export const BIT_VERSION = packageFile.version;
+
+export const BIT_INSTALL_METHOD = packageFile.installationMethod;
+
+export const RELEASE_SERVER = 'https://api-stg.bitsrc.io/release';

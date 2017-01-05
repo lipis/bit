@@ -2,8 +2,9 @@
 import fs from 'fs-extra';
 import path from 'path';
 import R from 'ramda';
-import * as bitCache from '../cache';
 import { pack } from '../tar';
+import * as bitCache from '../cache';
+import { CacheNotFound } from '../cache/exceptions';
 import { Impl, Specs } from './sources';
 import BitJson from '../bit-json';
 import ConsumerBitJson from '../bit-json/consumer-bit-json';
@@ -12,9 +13,7 @@ import { BitIds, BitId } from '../bit-id';
 import { remoteResolver, Remotes } from '../remotes';
 import { Scope } from '../scope';
 import Bit from './bit';
-import InvalidBit from './exceptions/invalid-bit';
 import { isDirEmptySync } from '../utils';
-import { LOCAL_SCOPE_NOTATION } from '../constants';
 import { composePath as composeBitJsonPath } from '../bit-json/bit-json';
 import validations from './validations';
 
@@ -22,7 +21,7 @@ export type PartialBitProps = {
   name: string;
   bitDir: string;
   bitJson: BitJson;
-  scope?: string;
+  scope: string;
 };
 
 export default class PartialBit {
@@ -35,7 +34,7 @@ export default class PartialBit {
     this.name = bitProps.name;
     this.bitDir = bitProps.bitDir;
     this.bitJson = bitProps.bitJson;
-    this.scope = bitProps.scope || LOCAL_SCOPE_NOTATION;
+    this.scope = bitProps.scope;
   }
 
   validate(): boolean {
@@ -96,8 +95,8 @@ export default class PartialBit {
     });
   }
 
-  isLocal() {
-    return this.scope === LOCAL_SCOPE_NOTATION;
+  isLocal(scope: Scope) {
+    return this.getId().isLocal(scope);
   }
 
   cd(newDir: string) {
@@ -127,16 +126,25 @@ export default class PartialBit {
     ];
   }
   
+  /**
+   * @deprecated
+   */
   composeTarFileName() {
-    return `${this.name}_${this.bitJson.version}.tar`;
+    return `${this.scope}_${this.getBox()}_${this.name}_${this.bitJson.version}.tar`;
   }
 
   toTar() {
-    return bitCache.get(this)
+    return bitCache.get(this.getId())
       .catch((err) => {
-        if (err.code !== 'ENOENT') throw err;
-        return bitCache.set(this, pack(this.getArchiveFiles())); 
+        if (!(err instanceof CacheNotFound)) throw err;
+        return bitCache.set(this.getId(), pack(this.getArchiveFiles())); 
       });
+  }
+
+  cache() {
+    return bitCache
+      .set(this.getId(), pack(this.getArchiveFiles()))
+      .then(() => this); 
   }
 
   loadFull(): Promise<Bit> {
@@ -146,6 +154,7 @@ export default class PartialBit {
     ]).then(([impl, specs ]) => 
       new Bit({
         name: this.name,
+        scope: this.scope,
         bitDir: this.bitDir,
         bitJson: this.bitJson,
         impl,
@@ -155,14 +164,14 @@ export default class PartialBit {
   }
 
   static loadFromInline(
-    bitDir: string, name: string, protoBJ: ConsumerBitJson
+    bitDir: string, name: string, protoBJ: ConsumerBitJson, scope: string
   ): Promise<PartialBit> {
     return BitJson.load(bitDir, protoBJ)
-      .then(bitJson => new PartialBit({ name, bitDir, bitJson }));
+      .then(bitJson => new PartialBit({ name, bitDir, bitJson, scope }));
   }
 
-  static load(bitDir: string, name: string): Promise<PartialBit> {
+  static load(bitDir: string, name: string, scope: string): Promise<PartialBit> {
     return BitJson.load(bitDir)
-      .then(bitJson => new PartialBit({ name, bitDir, bitJson }));
+      .then(bitJson => new PartialBit({ name, bitDir, bitJson, scope }));
   }
 }

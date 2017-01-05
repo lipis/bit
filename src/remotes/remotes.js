@@ -1,7 +1,10 @@
 /** @flow */
+import { groupBy, prop } from 'ramda';
+import { BitId } from '../bit-id';
 import Remote from './remote';
-import { forEach, prependBang } from '../utils';
+import { forEach, prependBang, flatten } from '../utils';
 import { PrimaryOverloaded, RemoteNotFound } from './exceptions';
+import { BitDependencies } from '../scope';
 
 export default class Remotes extends Map<string, Remote> {
   constructor(remotes: [string, Remote][] = []) {
@@ -18,6 +21,23 @@ export default class Remotes extends Map<string, Remote> {
     const remote = super.get(name);
     if (!remote) throw new RemoteNotFound(name);
     return remote;
+  }
+
+  resolve(scopeName: string) {
+    // @TODO impelment scope resolver
+    return this.get(scopeName.replace('@', ''));
+  }
+
+  fetch(ids: BitId[], withoutDeps: boolean = false): Promise<BitDependencies[]> {
+    const byScope = groupBy(prop('scope'));
+    const promises = [];
+    forEach(byScope(ids), (scopeIds, scopeName) => {
+      if (!withoutDeps) promises.push(this.resolve(scopeName).fetch(scopeIds));
+      else promises.push(this.resolve(scopeName).fetchOnes(scopeIds));
+    });
+
+    return Promise.all(promises)
+      .then(bits => flatten(bits));
   }
 
   toPlainObject() {

@@ -1,9 +1,13 @@
 /** @flow */
 import Bit from '../bit';
-import { contains, isBitUrl, cleanBang } from '../utils';
+import { contains, isBitUrl, cleanBang, allSettled } from '../utils';
 import { connect } from '../network';
 import { InvalidRemote } from './exceptions';
-import { BitId } from '../bit-id';
+import { BitId, BitIds } from '../bit-id';
+import { get as getCache } from '../cache';
+import { BitDependencies } from '../scope';
+import type { Network } from '../network/network';
+import { CacheNotFound } from '../cache/exceptions';
 
 /**
  * @ctx bit, primary, remote
@@ -15,15 +19,15 @@ function isPrimary(alias: string): boolean {
 export default class Remote {
   primary: boolean = false;
   host: string;
-  name: ?string;
+  name: string;
 
-  constructor(host: string, name: string, primary: boolean = false) {
-    this.name = name || null;
+  constructor(host: string, name: ?string, primary: boolean = false) {
+    this.name = name || '';
     this.host = host;
     this.primary = primary;
   }
 
-  connect(): Promise<Remote> {
+  connect(): Promise<Network> {
     return connect(this.host);
   }
 
@@ -40,10 +44,29 @@ export default class Remote {
     });
   }
 
-  fetch(bitIds: BitId[]): {name: string, contents: Buffer}[] {
+  fetch(bitIds: BitId[]): Promise<BitDependencies[]> {
     return this
       .connect()
       .then(network => network.fetch(bitIds));
+  }
+
+  fetchOnes(bitIds: BitIds): Promise<Bit[]> {
+    return allSettled(bitIds.map(id => getCache(id)))
+      .then((values: {success: boolean, val: Bit, error: CacheNotFound}[]) => {
+        const cached = Promise.all(values
+          .filter(res => res.success)
+          .map(res => Bit.fromTar({ tarball: res.val.tarball, scope: res.val.id.scope })));
+
+        const rest = values
+          .filter(res => !res.success && res.error.bitId)
+          .map(res => res.error.bitId);
+
+        return this
+          .connect()
+          .then(network => network.fetchOnes(rest))
+          .then(bits => Promise.all(bits.map(bit => bit.cache())))
+          .then(bits => cached.then(cachedBits => cachedBits.concat(bits)));
+      });
   }
 
   validate() {
