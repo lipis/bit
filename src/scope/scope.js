@@ -15,6 +15,8 @@ import { DependencyMap, getPath as getDependenyMapPath } from './dependency-map'
 import BitJson from '../bit-json';
 import { BitId, BitIds } from '../bit-id';
 import Bit from '../bit';
+import indexer from '../search/indexer';
+import { localSearch } from '../search';
 
 const pathHasScope = pathHas([BIT_SOURCES_DIRNAME, BIT_HIDDEN_DIR]);
 
@@ -162,6 +164,17 @@ export default class Scope {
     });
   }
 
+  search(remoteName: string, query: string) {
+    return this.remotes().then((remotes) => {
+      const remote = remotes.get(remoteName);
+      return remote.search(query);
+    });
+  }
+
+  searchLocally(query: string) {
+    return localSearch.search(this.getPath(), query);
+  }
+
   ensureDir() {
     return this.cache
       .ensureDir()
@@ -225,7 +238,8 @@ export default class Scope {
           spec: bitJson.getSpecBasename() ? files[bitJson.getSpecBasename()] : undefined
         });
 
-        return this.put(bit);
+        return this.put(bit)
+        .then(bitResult => indexer.index(bitResult, this.getPath()));
       });
   }
 

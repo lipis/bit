@@ -23,6 +23,10 @@ export default class Fs {
     return this.scope.put(bit);
   }
 
+  search(query: string) {
+    return this.scope.search(query);
+  }
+
   fetch(bitIds: BitIds) {
     return this.scope.getMany(bitIds);
   }

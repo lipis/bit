@@ -71,6 +71,10 @@ export default class SSH {
     });
   }
 
+  search(query: string) {
+    return this.exec('_search', query);
+  }
+
   describeScope() {
     return this.exec('_scope')
       .then((data) => {

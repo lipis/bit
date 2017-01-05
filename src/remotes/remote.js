@@ -56,6 +56,12 @@ export default class Remote {
     });
   }
 
+  search(query: string) {
+    return connect(this.host).then((network) => {
+      return network.search(query);
+    });
+  }
+
   static load(name: string, host: string): Remote {
     const primary = isPrimary(name);
     if (primary) name = cleanBang(name);

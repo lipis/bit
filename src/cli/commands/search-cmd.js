@@ -1,19 +1,20 @@
 /** @flow */
+import chalk from 'chalk';
 import Command from '../command';
+import { search } from '../../api';
 
 export default class Search extends Command {
-  name = 'search <query> [remote]';
-  description = 'search for bits in configured remote(s)';
+  name = 'search <scope> <query> ';
+  description = 'search for bits in configured scope';
   alias = '';
   opts = [];
   
-  action(): Promise<any> {
-    const m = this.alias;
-    console.log('searching bit...');
-    return new Promise(resolve => resolve(m));
+  action([scope, query]: [string, string]): Promise<any> {
+    console.log(`searching bits in ${scope} for ${query}`);
+    return search(scope, query);
   }
 
-  report(data: {string: any}): string {
-    return '';
+  report(searchResults: string): string {
+    return chalk.green(searchResults);
   }
 }

@@ -129,6 +129,14 @@ export default class Consumer {
     return this.scope.push(bitId, rawRemote);
   }
 
+  remoteSearch(rawScope: string, query: string) {
+    return this.scope.search(rawScope, query);
+  }
+
+  search(rawScope: string, query: string) {
+    return this.scope.searchLocally(rawScope, query);
+  }
+
   import(rawId: ?string, envBit: bool): Bit {
     if (!rawId) { // if no arguments inserted, install according to bitJson dependencies
       const deps = BitIds.loadDependencies(this.bitJson.dependencies);

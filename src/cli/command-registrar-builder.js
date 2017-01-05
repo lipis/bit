@@ -25,6 +25,7 @@ import DescribeScope from './commands/_scope-cmd';
 import Upload from './commands/_upload-cmd';
 // import Scope from './commands/scope-cmd';
 import Fetch from './commands/_fetch-cmd';
+import RemoteSearch from './commands/_search-cmd';
 
 export default function registerCommands(): CommandRegistrar {
   return new CommandRegistrar(BIT_USAGE, BIT_DESCRIPTION, BIT_VERSION, [
@@ -42,6 +43,7 @@ export default function registerCommands(): CommandRegistrar {
     new Show(),
     // new Remove(),
     new Search(),
+    new RemoteSearch(),
     new Test(),
     new Build(),
     new Install(),
