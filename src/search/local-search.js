@@ -9,12 +9,10 @@ function totalHits(scopePath: string, query: string) {
     localIndex = serverlessIndex.initializeIndex(scopePath);
     return localIndex.then((indexInstance) => {
       indexInstance.totalHits({
-        query: [{
-          AND: { '*': [query] }
-        }]
+        query: buildQuery(query)
       }, (err, count) => {
         if (err) reject(err);
-        resolve(count);
+        resolve(JSON.stringify(count));
       });
     });
   });
@@ -45,7 +43,7 @@ function getDoc(scopePath: string, docIds: string[]) {
 
 function formatSearchResult(searchResult: Object): string {
   const doc = searchResult.document;
-  return `${doc.box}/${doc.name}`;
+  return `> ${doc.box}/${doc.name}`;
 }
 
 function queryItem(field, query, boost = 1) {
@@ -55,19 +53,24 @@ function queryItem(field, query, boost = 1) {
   };
 }
 
+function buildQuery(queryStr: string) {
+  const tokenizedQuery = indexer.tokenizeStr(queryStr);
+  const query = [];
+  query.push(queryItem('box', queryStr, 4));
+  query.push(queryItem('tokenizedBox', queryStr, 3));
+  query.push(queryItem('name', queryStr, 4));
+  query.push(queryItem('tokenizedName', tokenizedQuery, 3));
+  query.push(queryItem('functionNames', queryStr, 3));
+  query.push(queryItem('tokenizedFunctionNames', tokenizedQuery, 2));
+  query.push(queryItem('description', queryStr));
+  return query;
+}
+
 function search(scopePath: string, queryStr: string) {
   return new Promise((resolve, reject) => {
     localIndex = serverlessIndex.initializeIndex(scopePath);
     const searchResults = [];
-    const tokenizedQuery = indexer.tokenizeStr(queryStr);
-    const query = [];
-    query.push(queryItem('box', queryStr, 4));
-    query.push(queryItem('tokenizedBox', queryStr, 3));
-    query.push(queryItem('name', queryStr, 4));
-    query.push(queryItem('tokenizedName', tokenizedQuery, 3));
-    query.push(queryItem('functionNames', queryStr, 3));
-    query.push(queryItem('tokenizedFunctionNames', tokenizedQuery, 2));
-    query.push(queryItem('description', queryStr));
+    const query = buildQuery(queryStr);
     return localIndex.then((indexInstance) => {
       indexInstance.search({
         query,

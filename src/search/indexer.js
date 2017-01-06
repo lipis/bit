@@ -17,7 +17,7 @@ function prepareDoc(doclets: Object, bit: Bit): Object {
   const box = bit.bitJson.box;
   const functionNames = doclets.map(doclet => doclet.name).join(' ');
   return {
-    id: `${name}_${box}`,
+    id: `${box}_${name}`,
     name,
     tokenizedName: tokenizeStr(name),
     box,
