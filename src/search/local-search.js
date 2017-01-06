@@ -1,5 +1,6 @@
 /** @flow */
 import serverlessIndex from './serverless-index';
+import indexer from './indexer';
 
 let localIndex;
 
@@ -47,15 +48,29 @@ function formatSearchResult(searchResult: Object): string {
   return `${doc.box}/${doc.name}`;
 }
 
-function search(scopePath: string, query: string) {
+function queryItem(field, query, boost = 1) {
+  return {
+    AND: { [field]: query.toLowerCase().split(' ') },
+    BOOST: boost
+  };
+}
+
+function search(scopePath: string, queryStr: string) {
   return new Promise((resolve, reject) => {
     localIndex = serverlessIndex.initializeIndex(scopePath);
     const searchResults = [];
+    const tokenizedQuery = indexer.tokenizeStr(queryStr);
+    const query = [];
+    query.push(queryItem('box', queryStr, 4));
+    query.push(queryItem('tokenizedBox', queryStr, 3));
+    query.push(queryItem('name', queryStr, 4));
+    query.push(queryItem('tokenizedName', tokenizedQuery, 3));
+    query.push(queryItem('functionNames', queryStr, 3));
+    query.push(queryItem('tokenizedFunctionNames', tokenizedQuery, 2));
+    query.push(queryItem('description', queryStr));
     return localIndex.then((indexInstance) => {
       indexInstance.search({
-        query: [{
-          AND: { '*': [query] }
-        }]
+        query,
       }).on('data', function (data) {
         searchResults.push(formatSearchResult(data));
       })

@@ -19,7 +19,7 @@ function prepareDoc(doclets: Object, bit: Bit): Object {
   return {
     id: `${name}_${box}`,
     name,
-    tokenizedNamed: tokenizeStr(name),
+    tokenizedName: tokenizeStr(name),
     box,
     tokenizedBox: tokenizeStr(box),
     functionNames,
@@ -66,4 +66,5 @@ function index(bit: Bit, scopePath: string) {
 
 module.exports = {
   index,
+  tokenizeStr
 };
