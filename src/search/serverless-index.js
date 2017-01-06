@@ -2,7 +2,7 @@ import path from 'path';
 import searchIndex from 'search-index';
 
 const indexName = 'searchIndex';
-const logLevel = 'debug';
+const logLevel = 'error';
 
 function getIndexPath(scopePath: string) {
   return path.join(scopePath, indexName);

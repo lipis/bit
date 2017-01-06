@@ -2,6 +2,7 @@
 import path from 'path';
 import { Readable } from 'stream'; 
 import Bit from '../bit/';
+import BitDependencies from '../scope/bit-dependencies';
 import parser from './parser';
 import serverlesindexInstancendex from './serverless-index';
 
@@ -47,24 +48,20 @@ function addToLocalIndex(doclets: Object, bit: Bit): Promise<any> {
   });
 }
 
-function processBit(bit: Bit) {
+function indexForCLI(bit: BitDependencies) {
   return new Promise((resolve, reject) => {
-    const implFile = path.join(bit.bitDir, bit.bitJson.impl);
+    const implFile = path.join(bit.bit.bitDir, bit.bit.bitJson.impl);
     parser.parse(implFile).then((doclets) => {
-      addToLocalIndex(doclets, bit).then(() => resolve(doclets));
-    });
+      addToLocalIndex(doclets, bit.bit).then(() => resolve(doclets));
+    }).catch(err => reject(err));
   });
-}
-
-function indexForCLI(bits: Bit[]) {
-  return Promise.all(bits.map(processBit)).then(() => bits);
 }
 
 function indexForWeb() {} // TODO
 
-function index(bits: Bit[], scopePath: string) {
+function index(bit: Bit, scopePath: string) {
   localIndex = serverlesindexInstancendex.initializeIndex(scopePath);
-  return indexForCLI(bits);
+  return indexForCLI(bit);
 }
 
 module.exports = {

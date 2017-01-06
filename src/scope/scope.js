@@ -16,7 +16,6 @@ import { SourcesMap, getPath as getDependenyMapPath } from './sources-map';
 import BitJson from '../bit-json';
 import { BitId, BitIds } from '../bit-id';
 import Bit from '../bit';
-import indexer from '../search/indexer';
 import { localSearch } from '../search';
 import BitDependencies from './bit-dependencies';
 

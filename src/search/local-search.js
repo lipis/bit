@@ -19,7 +19,7 @@ function totalHits(scopePath: string, query: string) {
   });
 }
 
-function coundDocs(scopePath: string) {
+function countDocs(scopePath: string) {
   return new Promise((resolve, reject) => {
     localIndex = serverlessIndex.initializeIndex(scopePath);
     return localIndex.then((indexInstance) => {
@@ -42,6 +42,11 @@ function getDoc(scopePath: string, docIds: string[]) {
   });
 }
 
+function formatSearchResult(searchResult: Object): string {
+  const doc = searchResult.document;
+  return `${doc.box}/${doc.name}`;
+}
+
 function search(scopePath: string, query: string) {
   return new Promise((resolve, reject) => {
     localIndex = serverlessIndex.initializeIndex(scopePath);
@@ -52,7 +57,7 @@ function search(scopePath: string, query: string) {
           AND: { '*': [query] }
         }]
       }).on('data', function (data) {
-        searchResults.push(data);
+        searchResults.push(formatSearchResult(data));
       })
       .on('end', function () {
         return resolve(searchResults);

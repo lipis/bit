@@ -15,6 +15,10 @@ export default class Search extends Command {
   }
 
   report(searchResults: string): string {
-    return chalk.green(searchResults);
+    const parsedResults = JSON.parse(searchResults);
+    if (!parsedResults.length) {
+      return chalk.red('No Results');  
+    }
+    return chalk.green(parsedResults.join('\n'));
   }
 }
